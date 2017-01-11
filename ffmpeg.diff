@@ -1,0 +1,45 @@
+diff --git a/ffmpeg.c b/ffmpeg.c
+index a5ec3c3..f2c22d9 100644
+--- a/ffmpeg.c
++++ b/ffmpeg.c
+@@ -711,8 +711,29 @@ static void write_frame(AVFormatContext *s, AVPacket *pkt, OutputStream *ost)
+         (avctx->codec_type == AVMEDIA_TYPE_AUDIO || avctx->codec_type == AVMEDIA_TYPE_VIDEO) &&
+         pkt->dts != AV_NOPTS_VALUE &&
+         ost->last_mux_dts != AV_NOPTS_VALUE) {
+-      int64_t max = ost->last_mux_dts + !(s->oformat->flags & AVFMT_TS_NONSTRICT);
+-      if (pkt->dts < max) {
++            int64_t max = ost->last_mux_dts + pkt->duration;//34;//!(s->oformat->flags & AVFMT_TS_NONSTRICT);
++	    pkt->dts = max;
++	    pkt->pts = max;
++
++//TODO: this isn't right yet. In samples, the increment shouldn't be constant. It will be 32, 32, 36, 32, 32, 36,
++// yet the frame duration is a constant "33". The correct frame duration is actually 33.333333, but the fraction
++// cannot be stored in an integer, hence rounding down to 33. However, this does result in the time skewing somewhat.
++//
++// I need some way to (1) calculate the actual frame duration, and (2) express it in a manner that allows me to 
++// increment DTS accurately (over several frames) without losing time.
++//
++// There is a further "glitch" in that VLC is reporting a frame rate of "1000". Obviously incorrect.
++//
++// There is also another possible problem if the stream ends up with dropped or duplicate frames from the source. This
++// is because our DTS is now completely separated from the actual stream (due to actual stream DTS being unreliable).
++//
++// Maybe we could use the kernel clock to calculate the proper DTS for each frame based on when NOW happens to be?
++// Upon first frame, store the kernel's time. Then for each subseqent frame take current time - start time and use that
++// to determine overall DTS for the current frame. But then, how to handle kernel time updates? GPS time? Is there any
++// way to watch for kernel time jumps and then add that offset to our reference?
++//
++
++/*      if (pkt->dts < max) {
+         int loglevel = max - pkt->dts > 2 || avctx->codec_type == AVMEDIA_TYPE_VIDEO ? AV_LOG_WARNING : AV_LOG_DEBUG;
+         av_log(s, loglevel, "Non-monotonous DTS in output stream "
+                "%d:%d; previous: %"PRId64", current: %"PRId64"; ",
+@@ -727,7 +748,7 @@ static void write_frame(AVFormatContext *s, AVPacket *pkt, OutputStream *ost)
+         if(pkt->pts >= pkt->dts)
+             pkt->pts = FFMAX(pkt->pts, max);
+         pkt->dts = max;
+-      }
++      }*/
+      }
+     }
+     ost->last_mux_dts = pkt->dts;
