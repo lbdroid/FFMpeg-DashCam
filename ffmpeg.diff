@@ -1,45 +1,129 @@
 diff --git a/ffmpeg.c b/ffmpeg.c
-index a5ec3c3..f2c22d9 100644
+index a5ec3c3..db98fda 100644
 --- a/ffmpeg.c
 +++ b/ffmpeg.c
-@@ -711,8 +711,29 @@ static void write_frame(AVFormatContext *s, AVPacket *pkt, OutputStream *ost)
+@@ -130,6 +130,7 @@ static int nb_frames_drop = 0;
+ static int64_t decode_error_stat[2];
+ 
+ static int current_time;
++static int64_t time_start;
+ AVIOContext *progress_avio = NULL;
+ 
+ static uint8_t *subtitle_out;
+@@ -711,24 +712,31 @@ static void write_frame(AVFormatContext *s, AVPacket *pkt, OutputStream *ost)
          (avctx->codec_type == AVMEDIA_TYPE_AUDIO || avctx->codec_type == AVMEDIA_TYPE_VIDEO) &&
          pkt->dts != AV_NOPTS_VALUE &&
          ost->last_mux_dts != AV_NOPTS_VALUE) {
 -      int64_t max = ost->last_mux_dts + !(s->oformat->flags & AVFMT_TS_NONSTRICT);
 -      if (pkt->dts < max) {
-+            int64_t max = ost->last_mux_dts + pkt->duration;//34;//!(s->oformat->flags & AVFMT_TS_NONSTRICT);
-+	    pkt->dts = max;
-+	    pkt->pts = max;
-+
-+//TODO: this isn't right yet. In samples, the increment shouldn't be constant. It will be 32, 32, 36, 32, 32, 36,
-+// yet the frame duration is a constant "33". The correct frame duration is actually 33.333333, but the fraction
-+// cannot be stored in an integer, hence rounding down to 33. However, this does result in the time skewing somewhat.
-+//
-+// I need some way to (1) calculate the actual frame duration, and (2) express it in a manner that allows me to 
-+// increment DTS accurately (over several frames) without losing time.
-+//
-+// There is a further "glitch" in that VLC is reporting a frame rate of "1000". Obviously incorrect.
-+//
-+// There is also another possible problem if the stream ends up with dropped or duplicate frames from the source. This
-+// is because our DTS is now completely separated from the actual stream (due to actual stream DTS being unreliable).
-+//
-+// Maybe we could use the kernel clock to calculate the proper DTS for each frame based on when NOW happens to be?
-+// Upon first frame, store the kernel's time. Then for each subseqent frame take current time - start time and use that
-+// to determine overall DTS for the current frame. But then, how to handle kernel time updates? GPS time? Is there any
-+// way to watch for kernel time jumps and then add that offset to our reference?
-+//
-+
-+/*      if (pkt->dts < max) {
-         int loglevel = max - pkt->dts > 2 || avctx->codec_type == AVMEDIA_TYPE_VIDEO ? AV_LOG_WARNING : AV_LOG_DEBUG;
-         av_log(s, loglevel, "Non-monotonous DTS in output stream "
-                "%d:%d; previous: %"PRId64", current: %"PRId64"; ",
-@@ -727,7 +748,7 @@ static void write_frame(AVFormatContext *s, AVPacket *pkt, OutputStream *ost)
-         if(pkt->pts >= pkt->dts)
-             pkt->pts = FFMAX(pkt->pts, max);
-         pkt->dts = max;
+-        int loglevel = max - pkt->dts > 2 || avctx->codec_type == AVMEDIA_TYPE_VIDEO ? AV_LOG_WARNING : AV_LOG_DEBUG;
+-        av_log(s, loglevel, "Non-monotonous DTS in output stream "
+-               "%d:%d; previous: %"PRId64", current: %"PRId64"; ",
+-               ost->file_index, ost->st->index, ost->last_mux_dts, pkt->dts);
+-        if (exit_on_error) {
+-            av_log(NULL, AV_LOG_FATAL, "aborting.\n");
+-            exit_program(1);
++        int64_t max;
++        if (regen_ts){
++          max = ((av_gettime_relative() - time_start) / 1000000000.0) * AV_TIME_BASE;
++          pkt->dts = max;
++          pkt->pts = max;
++        } else {
++          max = ost->last_mux_dts + !(s->oformat->flags & AVFMT_TS_NONSTRICT);
++          if (pkt->dts < max) {
++            int loglevel = max - pkt->dts > 2 || avctx->codec_type == AVMEDIA_TYPE_VIDEO ? AV_LOG_WARNING : AV_LOG_DEBUG;
++            av_log(s, loglevel, "Non-monotonous DTS in output stream "
++                   "%d:%d; previous: %"PRId64", current: %"PRId64"; ",
++                   ost->file_index, ost->st->index, ost->last_mux_dts, pkt->dts);
++            if (exit_on_error) {
++                av_log(NULL, AV_LOG_FATAL, "aborting.\n");
++                exit_program(1);
++            }
++            av_log(s, loglevel, "changing to %"PRId64". This may result "
++                   "in incorrect timestamps in the output file.\n",
++                   max);
++            if(pkt->pts >= pkt->dts)
++                pkt->pts = FFMAX(pkt->pts, max);
++            pkt->dts = max;
++          }
++        }
+         }
+-        av_log(s, loglevel, "changing to %"PRId64". This may result "
+-               "in incorrect timestamps in the output file.\n",
+-               max);
+-        if(pkt->pts >= pkt->dts)
+-            pkt->pts = FFMAX(pkt->pts, max);
+-        pkt->dts = max;
 -      }
-+      }*/
-      }
+-     }
      }
      ost->last_mux_dts = pkt->dts;
+ 
+@@ -3954,16 +3962,22 @@ static int process_input(int file_index)
+         } else {
+             if ( delta < -1LL*dts_error_threshold*AV_TIME_BASE ||
+                  delta >  1LL*dts_error_threshold*AV_TIME_BASE) {
+-                av_log(NULL, AV_LOG_WARNING, "DTS %"PRId64", next:%"PRId64" st:%d invalid dropping\n", pkt.dts, ist->next_dts, pkt.stream_index);
+-                pkt.dts = AV_NOPTS_VALUE;
++                if (regen_ts) pkt_dts = dts_error_threshold*AV_TIME_BASE/2;
++                else {
++                  av_log(NULL, AV_LOG_WARNING, "DTS %"PRId64", next:%"PRId64" st:%d invalid dropping\n", pkt.dts, ist->next_dts, pkt.stream_index);
++                  pkt.dts = AV_NOPTS_VALUE;
++                }
+             }
+             if (pkt.pts != AV_NOPTS_VALUE){
+                 int64_t pkt_pts = av_rescale_q(pkt.pts, ist->st->time_base, AV_TIME_BASE_Q);
+                 delta   = pkt_pts - ist->next_dts;
+                 if ( delta < -1LL*dts_error_threshold*AV_TIME_BASE ||
+                      delta >  1LL*dts_error_threshold*AV_TIME_BASE) {
+-                    av_log(NULL, AV_LOG_WARNING, "PTS %"PRId64", next:%"PRId64" invalid dropping st:%d\n", pkt.pts, ist->next_dts, pkt.stream_index);
+-                    pkt.pts = AV_NOPTS_VALUE;
++                    if (regen_ts) pkt_dts = dts_error_threshold*AV_TIME_BASE/2;
++                    else {
++                      av_log(NULL, AV_LOG_WARNING, "PTS %"PRId64", next:%"PRId64" invalid dropping st:%d\n", pkt.pts, ist->next_dts, pkt.stream_index);
++                      pkt.pts = AV_NOPTS_VALUE;
++                    }
+                 }
+             }
+         }
+@@ -4105,6 +4119,7 @@ static int transcode(void)
+     }
+ 
+     timer_start = av_gettime_relative();
++    time_start = timer_start;
+ 
+ #if HAVE_PTHREADS
+     if ((ret = init_input_threads()) < 0)
+diff --git a/ffmpeg.h b/ffmpeg.h
+index 20322b0..10e7eb9 100644
+--- a/ffmpeg.h
++++ b/ffmpeg.h
+@@ -527,6 +527,7 @@ extern int do_deinterlace;
+ extern int do_hex_dump;
+ extern int do_pkt_dump;
+ extern int copy_ts;
++extern int regen_ts;
+ extern int start_at_zero;
+ extern int copy_tb;
+ extern int debug_ts;
+diff --git a/ffmpeg_opt.c b/ffmpeg_opt.c
+index bc8355e..61bf397 100644
+--- a/ffmpeg_opt.c
++++ b/ffmpeg_opt.c
+@@ -102,6 +102,7 @@ int do_benchmark_all  = 0;
+ int do_hex_dump       = 0;
+ int do_pkt_dump       = 0;
+ int copy_ts           = 0;
++int regen_ts          = 0;
+ int start_at_zero     = 0;
+ int copy_tb           = -1;
+ int debug_ts          = 0;
+@@ -3205,6 +3206,8 @@ const OptionDef options[] = {
+         "audio drift threshold", "threshold" },
+     { "copyts",         OPT_BOOL | OPT_EXPERT,                       { &copy_ts },
+         "copy timestamps" },
++    { "regents",        OPT_BOOL | OPT_EXPERT,                       { &regen_ts },
++        "force timestamp regeneration in output stream, suitable for stream capturing only" },
+     { "start_at_zero",  OPT_BOOL | OPT_EXPERT,                       { &start_at_zero },
+         "shift input timestamps to start at 0 when using copyts" },
+     { "copytb",         HAS_ARG | OPT_INT | OPT_EXPERT,              { &copy_tb },
