@@ -1,6 +1,72 @@
-# FFMpeg-DashCam
+# Dashcam for CRAPPY Chinese car radios
 
 This is not free software.
 
 Read the project Wiki before doing anything else. It describes licensing and distribution limitations.
 https://github.com/lbdroid/FFMpeg-DashCam/wiki
+
+
+# NEW VERSION June 26, 2017
+
+WARNING: These instructions are LONG, but not difficult. They're just detailed. However, you still do need to have your own brain in order to understand the details. Please just read through carefully and try to understand. If there is something that is completely unclear, or doesn't work, or just doesn't make any sense *after an appropriate google search for solutions*, then by all means, open a new issue in the "Issues" tab at the top of the screen.
+
+
+Because of some very serious defects intentionally introduced into the kernel of certain chinese car radios that completely disables the use of "unapproved" USB peripherals, including, specifically, any known UVC camera, it has been necessary to come up with a workaround.
+
+The good news is that the workaround is infinitely superior to the original solution anyway!
+1) It is UNIVERSAL, rather than being limited to a specific brand of crappy chinese car radios,
+2) It can even run on a phone/tablet you have running in your car.
+3) While it does require additional hardware, that additional hardware is CHEAP (only $10)
+
+What you will need;
+1) Some android device running in your car. Like a chinese car radio, a tablet, or your cell phone.
+2) A Raspberry Pi Zero W, or a Pi 3B. May also work with ANY other RPi, if you plug in a wifi adapter.
+3) An SDCARD of at least 8 GB. Pay attention to the quality of the card, you're looking for one that talks about capturing HD videos. I personally use Sandisk Endurance 64 GB. The reason I don't add this to the "additional hardware" cost, is because you need an sdcard anyway.
+4) A CAMERA. Either a UVC camera, or a RPi camera. OR BOTH!!! It will support at least two cameras, possibly more -- I have only tested with 2 cameras. I recommend VERY WIDE ANGLE ("fisheye") cameras. This is for a dashcam, you aren't going for "pretty", your objective is to capture as much as possible in case some drunken meat head crashes into you! NOTE: If you go with a UVC camera, you will also need an "OTG CABLE" -- as low as "$0.99 with free shipping" https://www.amazon.com/Wblue-Adapter-Function-Samsung-BlackBerry/dp/B00Y2OTR72 -- or make one by soldering a micro-usb end onto the camera wire.
+
+The software:
+1) Pi-Dashcam.apk
+https://drive.google.com/open?id=0B7EPFZ3mUYvHWVZNejBPb0NZSDA
+
+2) The sdcard image.
+https://drive.google.com/open?id=0B7EPFZ3mUYvHSXdLTWkzQWM3aG8
+
+How-to:
+1) Install the APK. When you run it, you will find 2 tabs. Files tab shows you existing recordings, if the file is "checked", then it is protected from the reaper. Tap to play it back in some video player (I suggest VLC). The green "send" button in the corner will upload any stored GPS logs. Then there is the settings tab, I suggest enabling "auto-start". If you want it to automatically trigger a "send-to" (for instance, send to google drive to back up important evidence) when you "protect" a file, check the "auto share" switch. If you want to log your GPS, check that switch, if you want the gps logs to be stored on the rpi, check that switch. The last switch is to automatically enable wifi hotspot, which the rpi will need to use to communicate with your android device -- note: Yes, I am aware of the warning. I do mean it. No, the recommended program to use in place of this check is not yet available. IGNORE the warning for now. Don't forget to set up the hotspot with an SSID and password. There will also be a notification with a record or stop button that shows the status of the recording.
+2) Install the RPi IMG. Ok, so this is a touch more complex than just installing an APK on an Android device. On Linux, I would run this; "zcat rpicam1.img.gz | dd of=/dev/mmcblk0". I would imagine that Apple would be fairly similar to that. I don't really have any idea where to start suggesting how to do that with mswin. The RPi people have this about windows, which should work (but don't forget to gunzip the file first!!!) https://www.raspberrypi.org/documentation/installation/installing-images/windows.md
+2b) You will also want to expand the 3rd partition to fill the entire balance of the sdcard. You can use gparted from just about any linux distribution, or the gparted livecd http://gparted.org/livecd.php. If you're a tiny bit more ambitious, you could do it from within the rpi itself. Just delete the third partition, create a new one that fills the remaining space, mkfs.ext4 it, and create a directory in its root called "protected". Hint: If you do it from the rpi itself, make sure to kill picamd first.
+3) Fix the wifi settings so that it will log in to your hotspot. If you can mount the second ext4 partition, you can find /etc/wpa_supplicant/wpa_supplicant.conf. Just change the ssid and psk to match your own and save it. If you do it from the rpi, you will need to do it with a keyboard and monitor, since you don't yet have any network connectivity (well, if you have a pi with an ethernet port, you could log in via ssh for this step).
+a) log into the pi. The username is "pi" and the password is "raspberry".
+b) sudo mount -o remount,rw /ro
+c) sudo nano /ro/etc/wpa_supplicant/wpa_supplicant.conf
+Then make the change, save, exit, and...
+d) sudo reboot
+4) Set up the camera configuration for recording. You will need to log into the pi (ssh) and get a look at your cameras.
+a) First off, you can see all the camera interfaces by "ls /dev/video\*". If you have a raspberry pi CSI camera, it will show up as /dev/video0, with USB cameras appearing as /dev/video1, /dev/video2, etc. If you have no CSI camera, the USB cameras will start at /dev/video0. Some cameras may have multiple entries. Don't be alarmed by this, just pick the most appropriate entry.
+b) Check its output capabilities; "ffmpeg -f v4l2 -list_formats all -i /dev/videoX" with "X" replaced by the number corresponding to the camera you are looking at.
+--- I suggest only picking cameras that are flagged as "Compressed". Raw video is incredibly large and will not make your sdcard happy, assuming that it can keep up at all. Perhaps at extremely low resolutions that make it a challenge to determine if that was a car, or an iceberg.
+--- You are looking for two things from the output, the code, and the supported resolutions. By code, I mean "mjpeg" or "h264". h264 compresses a lot better than mjpeg, but can introduce more compression artifacts. Also, because of the nature of h264, if you are recording from more than 1 camera, you are best off restricting yourself to just ONE h264 stream. This is because videos have to be split on key frames, and on multiple streams, you'll never get the key frames to line up, which means that the second stream will have several broken frames at the start of each segment. For the resolution, these could be output as distinct configurations (like 1280x720, 640x480), or as RANGES. The RPi CSI driver gives ranges and looks like this; "{32-2592, 2}x{32-1944, 2}" -- basically, you can pick anything that satisfies the ranges, for instance, 1280x720.
+--- The configuration file is located at /boot/PICAMCONFIG, I selected this location because (i) Its a vfat partition which can be mounted on windows, (ii) it is mounted RW, which makes it easier to adjust on the fly. If you look at the default config file, it has a "params=" line that looks like this; "params=-f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video1 -c:v copy" -- this is a PARTIAL ffmpeg commandline. What it says, is to select an h264 stream with resolution 1280x720 from /dev/video1, and just COPY it (do not re-encode it). You will have to modify this to match YOUR camera!
+--- Example 2-camera configuration;
+"-f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video2 -f video4linux2 -input_format mjpeg -video_size 1280x720 -i /dev/video0 -c:v copy -map 0 -map 1"
+--- Example 2-camera configuration with the CSI camera recording at 10 fps to reduce file size:
+"-f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video2 -f video4linux2 -input_format mjpeg -video_size 1280x720 -framerate 10 -i /dev/video0 -c:v copy -map 0 -map 1"
+Note that not all cameras permit alteration of the framerate. The Pi CSI camera driver does.
+--- Example 2-camera + sound configuration;
+"-f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video2 -f video4linux2 -input_format mjpeg -video_size 1280x720 -i /dev/video0 -f oss -i /dev/dsp1 -ac 1 -c:a copy -c:v copy -map 0 -map 1 -map 2"
+Note: the sound messes up the timestamps, so I don't recommend that configuration just yet, working on it ;)
+--- You can TEST the commandlines by running them through ffmpeg from the commandline like this; "ffmpeg YOUR_PARAMETERS_HERE /home/pi/test.mkv" -- if it errors out, then you need to rework it. If it runs successfully, then copy the file to your computer and see if all your streams are playing correctly. Note: The test will be storing the video to a RAMDISK, so you can't transfer it by pulling out the sdcard. The ramdisk will also fill quickly, so press ctrl-c to stop it after several seconds. On Linux, the "scp" command can be used to retrieve the file, "scp pi@pizwcam.local:/home/pi/test.mkv ./"
+
+What now? Right. Plug it all in.
+My cameras;
+I have one of these;
+https://www.amazon.ca/ELP-Webcams-Surveillance-Customized-fisheye/dp/B0196BPZ1C
+
+And one of these;
+https://www.amazon.ca/SainSmart-Fish-Eye-Camera-Raspberry-Arduino/dp/B00N1YJKFS
+
+First off, the ELP captures a much nicer image than the SainSmart. Its also a slightly wider angle (170^ vs 160^). Because of the superior image quality, I mount the ELP on the front, and the SainSmart on the back. I drive a pickup truck, which has a fairly short cab, making it possible to mount the CSI camera on the back with a 1M wire.
+
+For mounting the ELP on the front, I actually screwed it into the front plastic cover of the rearview mirror. Completely invisible except for a thin wire running up from the mirror into the headliner.
+
+The sainsmart is screwed into a box that is glued to the upper edge near the center of the rear window, its wire runs up into the headliner and forward. The pi is screwed into the inside of the garage door opener compartment. The pi power wire is router under the headliner and down the A-piller to the dashboard, plugged in to the radio's USB wire behind the glove compartment.
