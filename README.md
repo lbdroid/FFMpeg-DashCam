@@ -70,3 +70,12 @@ First off, the ELP captures a much nicer image than the SainSmart. Its also a sl
 For mounting the ELP on the front, I actually screwed it into the front plastic cover of the rearview mirror. Completely invisible except for a thin wire running up from the mirror into the headliner.
 
 The sainsmart is screwed into a box that is glued to the upper edge near the center of the rear window, its wire runs up into the headliner and forward. The pi is screwed into the inside of the garage door opener compartment. The pi power wire is router under the headliner and down the A-piller to the dashboard, plugged in to the radio's USB wire behind the glove compartment.
+
+** TODO: **
+1) Make this readme more readable.
+2) Add some automation for the camera configurations (via the application).
+3) See if there is some sensible way to move the wpa_supplicant to the /boot partition, which would make it practical to modify from windows. Or option 2: set a default SSID and PASSWORD that it will connect to, and configure the application to send an update to the rpi.
+4) Script a first-run process that generates a 3rd partition that fills the sdcard's entire space.
+5) GPS logging and timekeeping on the rpi.
+6) GPS serving to the car radio from the rpi (because the crappy chinese car radio GPS's barely work at all).
+7) Figure out how to fix the timestamps when recording sound.
