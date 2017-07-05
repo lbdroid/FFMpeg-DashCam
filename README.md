@@ -95,3 +95,7 @@ About the audio glitches... turns out that it wasn't actually a timestamp proble
 So the solution was to crank up the queue length from 8 to 512, and that is done with the parameter "-thread_queue_size 512" added in front of every "-f" parameter in the ffmpeg commandline.
 
 I am currently capturing a 30 fps 1280x720 h264 stream, 10 fps 1280x720 mjpeg stream, and an audio stream using this parameter set; -thread_queue_size 512 -f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video2 -thread_queue_size 512 -f video4linux2 -input_format mjpeg -video_size 1280x720 -framerate 5 -i /dev/video0 -thread_queue_size 512 -f oss -i /dev/dsp1 -ac 1 -c:a copy -c:v copy -map 0 -map 1 -map 2
+
+And some more info to add to that... also added a gps log into the mix, and its holding steady. I'm starting to push the pi pretty hard though, at least when I'm also retrieving an already recorded video file. It might be a good idea to add in a rate limited for the file retrieval.
+
+I'm going to add a nice(-20) for the ffmpeg thread on next build.
