@@ -88,4 +88,10 @@ The sainsmart is screwed into a box that is glued to the upper edge near the cen
 ~~4) Script a first-run process that generates a 3rd partition that fills the sdcard's entire space.~~ DONE
 ~~5) GPS logging and timekeeping on the rpi.~~ DONE
 6) GPS serving to the car radio from the rpi (because the crappy chinese car radio GPS's barely work at all). (IN PROGRESS, PI SIDE DONE)
-7) Figure out how to fix the timestamps when recording sound.
+~~7) Figure out how to fix the timestamps when recording sound.~~ FIXED. Well, in a manner of speaking.
+
+About the audio glitches... turns out that it wasn't actually a timestamp problem, even though it was spewing timestamp errors. The problem was CPU contention. I actually did end up starting to see the same problem with a multiple-video-stream recording. The problem actually had to do with the packet queue depth. It turns out that the ffmpeg default is to set a packet queue depth of 8 (packets). Well that is fine for reading from disk where the actual disk is an extension of the queue, or with a very fast CPU that isn't going to stall while other processes run... but not so good for capturing a live stream on a weakling CPU like this thing has. While we aren't maxing out the CPU by any stretch, it still has to swap the process in and out in order for other things to run.
+
+So the solution was to crank up the queue length from 8 to 512, and that is done with the parameter "-thread_queue_size 512" added in front of every "-f" parameter in the ffmpeg commandline.
+
+I am currently capturing a 30 fps 1280x720 h264 stream, 10 fps 1280x720 mjpeg stream, and an audio stream using this parameter set; -thread_queue_size 512 -f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video2 -thread_queue_size 512 -f video4linux2 -input_format mjpeg -video_size 1280x720 -framerate 5 -i /dev/video0 -thread_queue_size 512 -f oss -i /dev/dsp1 -ac 1 -c:a copy -c:v copy -map 0 -map 1 -map 2
