@@ -6,7 +6,7 @@ Read the project Wiki before doing anything else. It describes licensing and dis
 https://github.com/lbdroid/FFMpeg-DashCam/wiki
 
 
-# NEW VERSION June 26, 2017
+# NEW VERSION June 26, 2017, Updated July 5, 2017
 
 WARNING: These instructions are LONG, but not difficult. They're just detailed. However, you still do need to have your own brain in order to understand the details. Please just read through carefully and try to understand. If there is something that is completely unclear, or doesn't work, or just doesn't make any sense *after an appropriate google search for solutions*, then by all means, open a new issue in the "Issues" tab at the top of the screen.
 
@@ -21,7 +21,7 @@ The good news is that the workaround is infinitely superior to the original solu
 What you will need;
 1) Some android device running in your car. Like a chinese car radio, a tablet, or your cell phone.
 2) A Raspberry Pi Zero W, or a Pi 3B. May also work with ANY other RPi, if you plug in a wifi adapter.
-3) An SDCARD of at least 8 GB. Pay attention to the quality of the card, you're looking for one that talks about capturing HD videos. I personally use Sandisk Endurance 64 GB. The reason I don't add this to the "additional hardware" cost, is because you need an sdcard anyway.
+3) An SDCARD of at least ~~8 GB~~ 4 GB (though I recommend bigger, note that ~2 GB are used for the OS). Pay attention to the quality of the card, you're looking for one that talks about capturing HD videos. I personally use Sandisk Endurance 64 GB. The reason I don't add this to the "additional hardware" cost, is because you need an sdcard anyway.
 4) A CAMERA. Either a UVC camera, or a RPi camera. OR BOTH!!! It will support at least two cameras, possibly more -- I have only tested with 2 cameras. I recommend VERY WIDE ANGLE ("fisheye") cameras. This is for a dashcam, you aren't going for "pretty", your objective is to capture as much as possible in case some drunken meat head crashes into you! NOTE: If you go with a UVC camera, you will also need an "OTG CABLE" -- as low as "$0.99 with free shipping" https://www.amazon.com/Wblue-Adapter-Function-Samsung-BlackBerry/dp/B00Y2OTR72 -- or make one by soldering a micro-usb end onto the camera wire.
 
 The software:
@@ -29,18 +29,28 @@ The software:
 https://drive.google.com/open?id=0B7EPFZ3mUYvHWVZNejBPb0NZSDA
 
 2) The sdcard image.
-https://drive.google.com/open?id=0B7EPFZ3mUYvHSXdLTWkzQWM3aG8
+https://drive.google.com/open?id=0B7EPFZ3mUYvHVzNUMlVUOU5INUE
 
 How-to:
 1) Install the APK. When you run it, you will find 2 tabs. Files tab shows you existing recordings, if the file is "checked", then it is protected from the reaper. Tap to play it back in some video player (I suggest VLC). The green "send" button in the corner will upload any stored GPS logs. Then there is the settings tab, I suggest enabling "auto-start". If you want it to automatically trigger a "send-to" (for instance, send to google drive to back up important evidence) when you "protect" a file, check the "auto share" switch. If you want to log your GPS, check that switch, if you want the gps logs to be stored on the rpi, check that switch. The last switch is to automatically enable wifi hotspot, which the rpi will need to use to communicate with your android device -- note: Yes, I am aware of the warning. I do mean it. No, the recommended program to use in place of this check is not yet available. IGNORE the warning for now. Don't forget to set up the hotspot with an SSID and password. There will also be a notification with a record or stop button that shows the status of the recording.
 2) Install the RPi IMG. Ok, so this is a touch more complex than just installing an APK on an Android device. On Linux, I would run this; "zcat rpicam1.img.gz | dd of=/dev/mmcblk0". I would imagine that Apple would be fairly similar to that. I don't really have any idea where to start suggesting how to do that with mswin. The RPi people have this about windows, which should work (but don't forget to gunzip the file first!!!) https://www.raspberrypi.org/documentation/installation/installing-images/windows.md
-2b) You will also want to expand the 3rd partition to fill the entire balance of the sdcard. You can use gparted from just about any linux distribution, or the gparted livecd http://gparted.org/livecd.php. If you're a tiny bit more ambitious, you could do it from within the rpi itself. Just delete the third partition, create a new one that fills the remaining space, mkfs.ext4 it, and create a directory in its root called "protected". Hint: If you do it from the rpi itself, make sure to kill picamd first.
-3) Fix the wifi settings so that it will log in to your hotspot. If you can mount the second ext4 partition, you can find /etc/wpa_supplicant/wpa_supplicant.conf. Just change the ssid and psk to match your own and save it. If you do it from the rpi, you will need to do it with a keyboard and monitor, since you don't yet have any network connectivity (well, if you have a pi with an ethernet port, you could log in via ssh for this step).
+~~2b) You will also want to expand the 3rd partition to fill the entire balance of the sdcard. You can use gparted from just about any linux distribution, or the gparted livecd http://gparted.org/livecd.php. If you're a tiny bit more ambitious, you could do it from within the rpi itself. Just delete the third partition, create a new one that fills the remaining space, mkfs.ext4 it, and create a directory in its root called "protected". Hint: If you do it from the rpi itself, make sure to kill picamd first.~~ No longer needed, this happens automatically during first boot.
+~~3) Fix the wifi settings so that it will log in to your hotspot. If you can mount the second ext4 partition, you can find /etc/wpa_supplicant/wpa_supplicant.conf. Just change the ssid and psk to match your own and save it. If you do it from the rpi, you will need to do it with a keyboard and monitor, since you don't yet have any network connectivity (well, if you have a pi with an ethernet port, you could log in via ssh for this step).
 a) log into the pi. The username is "pi" and the password is "raspberry".
 b) sudo mount -o remount,rw /ro
 c) sudo nano /ro/etc/wpa_supplicant/wpa_supplicant.conf
 Then make the change, save, exit, and...
-d) sudo reboot
+d) sudo reboot~~ No longer needed, this process has been streamlined somewhat.
+3) Update wifi settings on Pi...
+a) Set up a wifi AP or hotspot using SSID=PIWIFI, password=defaultpassword, and key_mgmt=WPA_PSK
+b) Power on Pi
+PATH0: You're good to go if you leave your car radio's hotspot set up with those specs.
+PATH1: ssh -l pi pizwcam.local with password "raspberry", and sudo mount -o remount,rw /ro; sudo vim /ro/etc/wpa_supplicant/wpa_supplicant.conf, edit the SSID and password to your preference, save, sudo reboot.
+PATH2: (For next version of APK not yet available) In the settings tab of the Android application, hit the wifi setup button, enter the new SSID and password, and send it to the pi. Pi will save it and reboot. Note: Android device and Pi must be on the same wifi network. Android device may be the hotspot.
+
+Now about #4.....
+The Pi side software has been updated to make it possible to send camera specs and receive commandline over HTTP. At some point (soon), I'm going to update the Android application to make this all a bunch of clickable choices. Make it much easier.
+
 4) Set up the camera configuration for recording. You will need to log into the pi (ssh) and get a look at your cameras.
 a) First off, you can see all the camera interfaces by "ls /dev/video\*". If you have a raspberry pi CSI camera, it will show up as /dev/video0, with USB cameras appearing as /dev/video1, /dev/video2, etc. If you have no CSI camera, the USB cameras will start at /dev/video0. Some cameras may have multiple entries. Don't be alarmed by this, just pick the most appropriate entry.
 b) Check its output capabilities; "ffmpeg -f v4l2 -list_formats all -i /dev/videoX" with "X" replaced by the number corresponding to the camera you are looking at.
@@ -73,9 +83,9 @@ The sainsmart is screwed into a box that is glued to the upper edge near the cen
 
 ** TODO: **
 1) Make this readme more readable.
-2) Add some automation for the camera configurations (via the application).
-3) See if there is some sensible way to move the wpa_supplicant to the /boot partition, which would make it practical to modify from windows. Or option 2: set a default SSID and PASSWORD that it will connect to, and configure the application to send an update to the rpi.
-4) Script a first-run process that generates a 3rd partition that fills the sdcard's entire space.
-5) GPS logging and timekeeping on the rpi.
-6) GPS serving to the car radio from the rpi (because the crappy chinese car radio GPS's barely work at all).
+2) Add some automation for the camera configurations (via the application). (IN PROGRESS)
+~~3) See if there is some sensible way to move the wpa_supplicant to the /boot partition, which would make it practical to modify from windows. Or option 2: set a default SSID and PASSWORD that it will connect to, and configure the application to send an update to the rpi.~~ MOSTLY. Some minor update needed to Pi side.
+~~4) Script a first-run process that generates a 3rd partition that fills the sdcard's entire space.~~ DONE
+~~5) GPS logging and timekeeping on the rpi.~~ DONE
+6) GPS serving to the car radio from the rpi (because the crappy chinese car radio GPS's barely work at all). (IN PROGRESS, PI SIDE DONE)
 7) Figure out how to fix the timestamps when recording sound.
