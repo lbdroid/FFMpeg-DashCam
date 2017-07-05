@@ -29,7 +29,7 @@ The software:
 https://drive.google.com/open?id=0B7EPFZ3mUYvHWVZNejBPb0NZSDA
 
 2) The sdcard image.
-https://drive.google.com/open?id=0B7EPFZ3mUYvHZUd3LXAtSURrQWM
+https://drive.google.com/open?id=0B7EPFZ3mUYvHQUdpSC16QzZUWUk
 
 How-to:
 1) Install the APK. When you run it, you will find 2 tabs. Files tab shows you existing recordings, if the file is "checked", then it is protected from the reaper. Tap to play it back in some video player (I suggest VLC). The green "send" button in the corner will upload any stored GPS logs. Then there is the settings tab, I suggest enabling "auto-start". If you want it to automatically trigger a "send-to" (for instance, send to google drive to back up important evidence) when you "protect" a file, check the "auto share" switch. If you want to log your GPS, check that switch, if you want the gps logs to be stored on the rpi, check that switch. The last switch is to automatically enable wifi hotspot, which the rpi will need to use to communicate with your android device -- note: Yes, I am aware of the warning. I do mean it. No, the recommended program to use in place of this check is not yet available. IGNORE the warning for now. Don't forget to set up the hotspot with an SSID and password. There will also be a notification with a record or stop button that shows the status of the recording.
