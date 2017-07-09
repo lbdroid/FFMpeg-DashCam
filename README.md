@@ -99,3 +99,5 @@ I am currently capturing a 30 fps 1280x720 h264 stream, 10 fps 1280x720 mjpeg st
 And some more info to add to that... also added a gps log into the mix, and its holding steady. I'm starting to push the pi pretty hard though, at least when I'm also retrieving an already recorded video file. It might be a good idea to add in a rate limited for the file retrieval.
 
 I'm going to add a nice(-20) for the ffmpeg thread on next build.
+
+Have to add another feature, which is the ability to run extra user-defined commands immediately prior to starting up ffmpeg. Specifically, v4l2-ctl, which is needed to adjust the characteristics of the cameras. I'm needing this command for my own use, but others may require something more customized to their own needs; "/usr/bin/v4l2-ctl --set-ctrl=video_bitrate=2000000 --set-ctrl=compression_quality=10 --set-ctrl=rotate=180"
