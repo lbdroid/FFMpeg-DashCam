@@ -6,7 +6,7 @@ Read the project Wiki before doing anything else. It describes licensing and dis
 https://github.com/lbdroid/FFMpeg-DashCam/wiki
 
 
-# NEW VERSION June 26, 2017, Updated July 5, 2017
+# NEW VERSION June 26, 2017, Updated July 10, 2017
 
 WARNING: These instructions are LONG, but not difficult. They're just detailed. However, you still do need to have your own brain in order to understand the details. Please just read through carefully and try to understand. If there is something that is completely unclear, or doesn't work, or just doesn't make any sense *after an appropriate google search for solutions*, then by all means, open a new issue in the "Issues" tab at the top of the screen.
 
@@ -26,7 +26,7 @@ What you will need;
 
 The software:
 1) Pi-Dashcam.apk
-https://drive.google.com/open?id=0B7EPFZ3mUYvHWVZNejBPb0NZSDA
+Use DashCam 2.0.0.apk from this repository.
 
 2) The sdcard image.
 https://drive.google.com/open?id=0B7EPFZ3mUYvHQUdpSC16QzZUWUk
@@ -101,3 +101,13 @@ And some more info to add to that... also added a gps log into the mix, and its 
 I'm going to add a nice(-20) for the ffmpeg thread on next build.
 
 Have to add another feature, which is the ability to run extra user-defined commands immediately prior to starting up ffmpeg. Specifically, v4l2-ctl, which is needed to adjust the characteristics of the cameras. I'm needing this command for my own use, but others may require something more customized to their own needs; "/usr/bin/v4l2-ctl --set-ctrl=video_bitrate=2000000 --set-ctrl=compression_quality=10 --set-ctrl=rotate=180"
+
+**UPDATE JULY 10th:**
+
+I'm going to call the current state "BETA". Its definitely beyond Alpha, all the main features are implemented. There may be some complex configurations to make, but the software is workable and shouldn't place any burden on the crappy chinese car radio, and should more or less "work".
+
+Note: If you are using a CSI camera on the pi, make sure to SHIELD the ribbon wire. The longer the ribbon, the more critical it is to shield it. Use something like aluminum duct tape from home depot in the FURNACE DUCTWORK section. Don't forget to electrically tie the aluminum tape to the car's chassis (negative).
+
+The 2.0.0 Android application fixes a critical bug that I was restling with that was causing the car radio to perform a full shutdown on ignition off instead of going into standby. This was due to it being impossible to have the wifi hotspot shut down when the ignition was switched off. Typically, one registers a receiver for the SCREEN OFF intent, but these pieces of junk don't emit that intent. I also tried polling for the screen state, and whether the device was in an "interactive" state. Apparently, when the screen is actually off, it still thinks it is on, and it never goes non-interactive until it is too late to do anything (about 5 minutes AFTER ignition off).
+
+I ended up having to implement a HACK to solve this problem, and the hack is this; watch the state of the BLUETOOTH adapter. When the bluetooth adapter powers off and remains powered off, I take that to indicate that the ignition is off, and use that information to decide to send a stop recording instruction to the pi, and then power off the wifi hotspot. It is worth noting that the crapware in these car radios automatically re-enables the bluetooth almost instantly when you manually turn off the bluetooth, so what I do is I check that the bluetooth remains turned off for 5 checks that are spaced out 5 seconds apart. This allows the user to turn bluetooth off as they might normally do to reset it when it gets goobered up, but without causing the recording or wifi hotspot to switch off when they do so.
