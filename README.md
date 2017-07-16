@@ -5,6 +5,11 @@ This is not free software.
 Read the project Wiki before doing anything else. It describes licensing and distribution limitations.
 https://github.com/lbdroid/FFMpeg-DashCam/wiki
 
+NEW: The project is now OPEN SOURCE!
+picamd: https://github.com/lbdroid/picamd
+frontend: https://github.com/lbdroid/dashcam_frontend
+(picamd runs on the raspberry pi or other computer running linux, frontend runs on android device like car radio)
+
 
 # NEW VERSION June 26, 2017, Updated July 10, 2017
 
