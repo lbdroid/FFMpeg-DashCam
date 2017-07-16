@@ -1,4 +1,4 @@
-# Dashcam for CRAPPY Chinese car radios
+# Non-crappy Dashcam for CRAPPY Chinese car radios
 
 This is ~~not~~ now(!!) free software.
 
