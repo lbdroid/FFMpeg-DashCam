@@ -117,7 +117,7 @@ And there is more...<br />
 - report on git revision it is built from
 - ffmpeg running at nice(-20)
 - mutex protection of database handle and filesystem mounting
-- lighten the reaper by changing from process to pthread
+- lighten the reaper by changing from process to pthread<br />
 (note that the crash log is stored in a file in RAMDISK, so it is lost upon reboot)
 
 ** dashcam_frontend **:
