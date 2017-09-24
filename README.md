@@ -27,7 +27,7 @@ What you will need;
 1) Some android device running in your car. Like a chinese car radio, a tablet, or your cell phone.
 2) A Raspberry Pi Zero W, or a Pi 3B. May also work with ANY other RPi, if you plug in a wifi adapter.
 3) An SDCARD of at least ~~8 GB~~ 4 GB (though I recommend bigger, note that ~2 GB are used for the OS). Pay attention to the quality of the card, you're looking for one that talks about capturing HD videos. I personally use Sandisk Endurance 64 GB. The reason I don't add this to the "additional hardware" cost, is because you need an sdcard anyway.
-4) A CAMERA. Either a UVC camera, or a RPi camera. OR BOTH!!! It will support at least two cameras, possibly more -- I have only tested with 2 cameras. I recommend VERY WIDE ANGLE ("fisheye") cameras. This is for a dashcam, you aren't going for "pretty", your objective is to capture as much as possible in case some drunken meat head crashes into you! NOTE: If you go with a UVC camera, you will also need an "OTG CABLE" -- as low as "$0.99 with free shipping" https://www.amazon.com/Wblue-Adapter-Function-Samsung-BlackBerry/dp/B00Y2OTR72 -- or make one by soldering a micro-usb end onto the camera wire.
+4) A CAMERA. Either a UVC camera, or a RPi camera [[1]](https://github.com/hvdwolf/FFMpeg-DashCam/blob/master/README.md#1.-csi-camera). OR BOTH!!! It will support at least two cameras, possibly more -- I have only tested with 2 cameras. I recommend VERY WIDE ANGLE ("fisheye") cameras. This is for a dashcam, you aren't going for "pretty", your objective is to capture as much as possible in case some drunken meat head crashes into you! NOTE: If you go with a UVC camera, you will also need an "OTG CABLE" -- as low as "$0.99 with free shipping" https://www.amazon.com/Wblue-Adapter-Function-Samsung-BlackBerry/dp/B00Y2OTR72 -- or make one by soldering a micro-usb end onto the camera wire.
 
 The software:
 See the links at the top!
@@ -41,7 +41,7 @@ Ok, so this is a touch more complex than just installing an APK on an Android de
    a) Set up a wifi AP or hotspot using SSID=PIWIFI, password=defaultpassword, and key_mgmt=WPA_PSK<br />
    b) Power on Pi  
      * PATH0: You're good to go if you leave your car radio's hotspot set up with those specs.<br />
-     * PATH1: `ssh -l pi pizwcam.local with password "raspberry"`, and `sudo mount -o remount,rw /ro;` `sudo vim /ro/etc/wpa_supplicant/wpa_supplicant.conf`, edit the SSID and password to your preference, save, `sudo reboot`.<br />
+     * PATH1: `ssh -l pi pizwcam.local with password "raspberry"`[[2]](https://github.com/hvdwolf/FFMpeg-DashCam/blob/master/README.md#2.-password), and `sudo mount -o remount,rw /ro;` `sudo vim /ro/etc/wpa_supplicant/wpa_supplicant.conf`, edit the SSID and password to your preference, save, `sudo reboot`.<br />
      * PATH2: (For next version of APK not yet available) In the settings tab of the Android application, hit the wifi setup button, enter the new SSID and password, and send it to the pi. Pi will save it and reboot. Note: Android device and Pi must be on the same wifi network. Android device may be the hotspot.<br />
 
 Now about #4.....
@@ -56,10 +56,10 @@ b) Check its output capabilities; `ffmpeg -f v4l2 -list_formats all -i /dev/vide
 --- The configuration file is located at /mnt/data/CONFIG, note that this filesystem is mounted ro except when actually recording video. If you look at the default config file, it has a "params=" line that looks like this: `params=-f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video1 -c:v copy` 
    -- this is a PARTIAL ffmpeg commandline. What it says, is to select an h264 stream with resolution 1280x720 from /dev/video1, and just COPY it (do not re-encode it). You will have to modify this to match YOUR camera!<br />
 --- Example 2-camera configuration;
-`-f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video2 -f video4linux2 -input_format mjpeg -video_size 1280x720 -i /dev/video0 -c:v copy -map 0 -map 1`
+`-f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video2 -f video4linux2 -input_format mjpeg -video_size 1280x720 -i /dev/video0 -c:v copy -map 0 -map 1`<br />
 --- Example 2-camera configuration with the CSI camera recording at 10 fps to reduce file size:
 `-f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video2 -f video4linux2 -input_format mjpeg -video_size 1280x720 -framerate 10 -i /dev/video0 -c:v copy -map 0 -map 1`
-Note that not all cameras permit alteration of the framerate. The Pi CSI camera driver does.
+Note that not all cameras permit alteration of the framerate. The Pi CSI camera driver does.<br />
 --- Example 2-camera + sound configuration;
 `-f video4linux2 -input_format h264 -video_size 1280x720 -i /dev/video2 -f video4linux2 -input_format mjpeg -video_size 1280x720 -i /dev/video0 -f oss -i /dev/dsp1 -ac 1 -c:a copy -c:v copy -map 0 -map 1 -map 2`
 Note: the sound messes up the timestamps, so I don't recommend that configuration just yet, working on it ;)<br />
@@ -80,7 +80,7 @@ For mounting the ELP on the front, I actually screwed it into the front plastic 
 
 The sainsmart is screwed into a box that is glued to the upper edge near the center of the rear window, its wire runs up into the headliner and forward. The pi is screwed into the inside of the garage door opener compartment. The pi power wire is router under the headliner and down the A-piller to the dashboard, plugged in to the radio's USB wire behind the glove compartment.
 
-** TODO: **
+**TODO:**
 1) Make this readme more readable.
 2) Add some automation for the camera configurations (via the application). (IN PROGRESS)
 3) GPS serving to the car radio from the rpi (because the crappy chinese car radio GPS's barely work at all). (IN PROGRESS, PI SIDE DONE)
@@ -134,3 +134,12 @@ And there is more...<br />
 
 ** UPDATE JULY 27 **
 - disable IPv6 on the pi, it was causing problems whenever the Android NSD picked up an ipv6 address since it was impossible to connect to the pi via ipv6. This makes it able to come back on properly when used with Android 6.0+
+
+
+
+#### Some useful post install instructions
+The tool "raspi-config" is a handy tool for less epxerienced linux users to make/alter some settings like passwd, enable/disable csi camera interface, localisation (language, timezone, WiFi-country *(WiFi channels are different for US, Japan and rest of the world)*).<br />You start raspi-config with `sudo raspi-config`.
+#### 1. csi camera
+The csi camera has its own interface on the Raspberry Pi SBCs. You can also use "raspi-config" to enable/disable it. From menu -> 5. Interfacing options -> 1. Pi Camera. (You can also manually do that in the config.txt). 
+##### 2. password
+This dashcam solution is based on Raspbian Jessie Lite. The default userid and password on Raspbian is pi/raspberry. The "whole world" knows that. It would be good to change that password using the `passwd` binary or the `sudo raspi-config` option.
