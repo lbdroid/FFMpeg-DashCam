@@ -27,7 +27,7 @@ What you will need;
 1) Some android device running in your car. Like a chinese car radio, a tablet, or your cell phone.
 2) A Raspberry Pi Zero W, or a Pi 3B. May also work with ANY other RPi, if you plug in a wifi adapter.
 3) An SDCARD of at least ~~8 GB~~ 4 GB (though I recommend bigger, note that ~2 GB are used for the OS). Pay attention to the quality of the card, you're looking for one that talks about capturing HD videos. I personally use Sandisk Endurance 64 GB. The reason I don't add this to the "additional hardware" cost, is because you need an sdcard anyway.
-4) A CAMERA. Either a UVC camera, or a RPi camera [[1]](https://github.com/hvdwolf/FFMpeg-DashCam/blob/master/README.md#1.-csi-camera). OR BOTH!!! It will support at least two cameras, possibly more -- I have only tested with 2 cameras. I recommend VERY WIDE ANGLE ("fisheye") cameras. This is for a dashcam, you aren't going for "pretty", your objective is to capture as much as possible in case some drunken meat head crashes into you! NOTE: If you go with a UVC camera, you will also need an "OTG CABLE" -- as low as "$0.99 with free shipping" https://www.amazon.com/Wblue-Adapter-Function-Samsung-BlackBerry/dp/B00Y2OTR72 -- or make one by soldering a micro-usb end onto the camera wire.
+4) A CAMERA. Either a UVC camera, or a RPi camera [[1]](https://github.com/lbdroid/FFMpeg-DashCam/blob/master/README.md#1-csi-camera). OR BOTH!!! It will support at least two cameras, possibly more -- I have only tested with 2 cameras. I recommend VERY WIDE ANGLE ("fisheye") cameras. This is for a dashcam, you aren't going for "pretty", your objective is to capture as much as possible in case some drunken meat head crashes into you! NOTE: If you go with a UVC camera, you will also need an "OTG CABLE" -- as low as "$0.99 with free shipping" https://www.amazon.com/Wblue-Adapter-Function-Samsung-BlackBerry/dp/B00Y2OTR72 -- or make one by soldering a micro-usb end onto the camera wire.
 
 The software:
 See the links at the top!
@@ -41,7 +41,7 @@ Ok, so this is a touch more complex than just installing an APK on an Android de
    a) Set up a wifi AP or hotspot using SSID=PIWIFI, password=defaultpassword, and key_mgmt=WPA_PSK<br />
    b) Power on Pi  
      * PATH0: You're good to go if you leave your car radio's hotspot set up with those specs.<br />
-     * PATH1: `ssh -l pi pizwcam.local with password "raspberry"`[[2]](https://github.com/hvdwolf/FFMpeg-DashCam/blob/master/README.md#2.-password), and `sudo mount -o remount,rw /ro;` `sudo vim /ro/etc/wpa_supplicant/wpa_supplicant.conf`, edit the SSID and password to your preference, save, `sudo reboot`.<br />
+     * PATH1: `ssh -l pi pizwcam.local with password "raspberry"`[[2]](https://github.com/lbdroid/FFMpeg-DashCam/blob/master/README.md#2-password), and `sudo mount -o remount,rw /ro;` `sudo vim /ro/etc/wpa_supplicant/wpa_supplicant.conf`, edit the SSID and password to your preference, save, `sudo reboot`.<br />
      * PATH2: (For next version of APK not yet available) In the settings tab of the Android application, hit the wifi setup button, enter the new SSID and password, and send it to the pi. Pi will save it and reboot. Note: Android device and Pi must be on the same wifi network. Android device may be the hotspot.<br />
 
 Now about #4.....
@@ -138,8 +138,8 @@ And there is more...<br />
 
 
 #### Some useful post install instructions
-The tool "raspi-config" is a handy tool for less epxerienced linux users to make/alter some settings like passwd, enable/disable csi camera interface, localisation (language, timezone, WiFi-country *(WiFi channels are different for US, Japan and rest of the world)*).<br />You start raspi-config with `sudo raspi-config`.
+The tool "raspi-config" is a handy tool for less experienced linux users to make/alter some settings like passwd, enable/disable csi camera interface, localisation (language, timezone, WiFi-country *(WiFi channels are different for US, Japan and rest of the world)*).<br />You start raspi-config with `sudo raspi-config`.
 #### 1. csi camera
 The csi camera has its own interface on the Raspberry Pi SBCs. You can also use "raspi-config" to enable/disable it. From menu -> 5. Interfacing options -> 1. Pi Camera. (You can also manually do that in the config.txt). 
-##### 2. password
+#### 2. password
 This dashcam solution is based on Raspbian Jessie Lite. The default userid and password on Raspbian is pi/raspberry. The "whole world" knows that. It would be good to change that password using the `passwd` binary or the `sudo raspi-config` option.
